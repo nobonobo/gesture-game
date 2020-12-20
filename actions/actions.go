@@ -9,6 +9,4 @@ const (
 	GameStart
 	// GameEnd ...
 	GameEnd
-	// EstimatePose ...
-	EstimatePose
 )

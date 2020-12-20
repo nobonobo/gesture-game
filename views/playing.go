@@ -15,13 +15,6 @@ type Playing struct {
 	spago.Core
 }
 
-func init() {
-	js.Global().Set("get", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		dispatcher.Dispatch(actions.EstimatePose)
-		return nil
-	}))
-}
-
 // Abort ...
 func (c *Playing) Abort() spago.Markup {
 	return spago.Tag("a",

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"math"
 	"syscall/js"
 	"time"
 
@@ -20,43 +19,6 @@ var (
 	document = js.Global().Get("document")
 	console  = js.Global().Get("console")
 )
-
-// State ...
-type State struct {
-	Time          time.Time
-	State         int
-	Valid         bool
-	Distance      float64
-	Score         int
-	LeftWrist     Vector
-	RightWrist    Vector
-	Nose          Vector
-	LeftShoulder  Vector
-	RightShoulder Vector
-}
-
-func drawLine(ctx js.Value, begin, end Vector) {
-	ctx.Call("beginPath")
-	ctx.Call("moveTo", begin.X, begin.Y)
-	ctx.Call("lineTo", end.X, end.Y)
-	ctx.Call("closePath")
-	ctx.Call("stroke")
-}
-
-func drawDot(ctx js.Value, pos Vector, color string) {
-	ctx.Set("fillStyle", color)
-	ctx.Call("beginPath")
-	ctx.Call("arc", pos.X, pos.Y, 4, 0, 2*math.Pi, true)
-	ctx.Call("fill")
-}
-
-func drawText(ctx js.Value, text string, x, y, sz int, color string) {
-	ctx.Call("beginPath")
-	ctx.Set("fillStyle", color)
-	ctx.Set("font", fmt.Sprintf("bold %dpx Arial, sans-serif", sz))
-	textWidth := ctx.Call("measureText", text).Get("width").Int()
-	ctx.Call("fillText", text, x-(textWidth)/2, y)
-}
 
 func main() {
 	conf := posenet.Config{
@@ -193,17 +155,6 @@ func main() {
 			ctx = js.Null()
 			poseNet.Stop()
 			router.Navigate("/result")
-		}()
-	})
-	dispatcher.Register(actions.EstimatePose, func(args ...interface{}) {
-		go func() {
-			poses, err := poseNet.EstimateSinglePose(nil)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			_ = poses
-			//console.Call("log", poses)
 		}()
 	})
 	log.Println(poseNet)
