@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"math"
 	"syscall/js"
+	"time"
 
 	"github.com/nobonobo/posenet"
 	"github.com/nobonobo/spago"
@@ -18,15 +21,61 @@ var (
 	console  = js.Global().Get("console")
 )
 
+// State ...
+type State struct {
+	Time          time.Time
+	State         int
+	Valid         bool
+	Distance      float64
+	Score         int
+	LeftWrist     Vector
+	RightWrist    Vector
+	Nose          Vector
+	LeftShoulder  Vector
+	RightShoulder Vector
+}
+
+func drawLine(ctx js.Value, begin, end Vector) {
+	ctx.Call("beginPath")
+	ctx.Call("moveTo", begin.X, begin.Y)
+	ctx.Call("lineTo", end.X, end.Y)
+	ctx.Call("closePath")
+	ctx.Call("stroke")
+}
+
+func drawDot(ctx js.Value, pos Vector, color string) {
+	ctx.Set("fillStyle", color)
+	ctx.Call("beginPath")
+	ctx.Call("arc", pos.X, pos.Y, 4, 0, 2*math.Pi, true)
+	ctx.Call("fill")
+}
+
+func drawText(ctx js.Value, text string, x, y, sz int, color string) {
+	ctx.Call("beginPath")
+	ctx.Set("fillStyle", color)
+	ctx.Set("font", fmt.Sprintf("bold %dpx Arial, sans-serif", sz))
+	textWidth := ctx.Call("measureText", text).Get("width").Int()
+	ctx.Call("fillText", text, x-(textWidth)/2, y)
+}
+
 func main() {
-	poseNet := posenet.New(posenet.DefaultSingleConfig)
+	conf := posenet.Config{
+		Algorithm:       "single-pose",
+		Architecture:    "MobileNetV1",
+		OutputStride:    16,
+		InputResolution: 300,
+		Multiplier:      0.5,
+		QuantBytes:      2,
+	}
+	state := State{}
+	poseNet := posenet.New(conf)
 	playing := false
 	log.Println("loaded")
 	var cb js.Func
 	ctx := js.Null()
 	video := js.Null()
-	width := 1280
-	height := 720
+	width := 640
+	height := 480
 	cb = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		go func() {
 			if playing {
@@ -56,13 +105,68 @@ func main() {
 				ctx.Call("translate", -640, 0)
 				ctx.Call("drawImage", video, 0, 0)
 				ctx.Call("restore")
+				if state.Distance < 5 {
+					drawText(ctx, "ちかい！ちかい！", 320, 200, 32, "rgb(100,100,255)")
+					if state.State == 0 {
+						state.Time = time.Now()
+					}
+				} else {
+					if state.Valid {
+						if state.State == 0 {
+							tm := int(time.Since(state.Time))
+							if tm < 4*int(time.Second) {
+								t := 3 - tm/int(time.Second)
+								ts := fmt.Sprintf("%d", t)
+								if t == 0 {
+									ts = "START!"
+								}
+								drawText(ctx, ts, 320, 240, 48, "rgb(200,200,255)")
+							} else {
+								state.State = 1
+								state.Time = time.Now()
+							}
+						}
+						drawDot(ctx, state.LeftWrist, "#ff0000")
+						drawDot(ctx, state.RightWrist, "#00ff00")
+					}
+				}
 				poses, err := poseNet.EstimateSinglePose(nil)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				_ = poses
-				console.Call("log", poses)
+				valid := 0
+				if poses.Get("score").Float() > 0.4 {
+					keypoints := poses.Get("keypoints")
+					console.Call("log", keypoints)
+					for i := 0; i < keypoints.Length(); i++ {
+						part := keypoints.Index(i)
+						if part.Get("score").Float() > 0.4 {
+							switch part.Get("part").String() {
+							case "nose":
+								valid++
+								state.Nose = NewVector(part.Get("position"))
+							case "leftShoulder":
+								valid++
+								state.LeftShoulder = NewVector(part.Get("position"))
+							case "rightShoulder":
+								valid++
+								state.RightShoulder = NewVector(part.Get("position"))
+							case "leftWrist":
+								valid++
+								state.LeftWrist = NewVector(part.Get("position"))
+							case "rightWrist":
+								valid++
+								state.RightWrist = NewVector(part.Get("position"))
+							}
+						}
+					}
+				}
+				state.Valid = valid >= 5
+				if state.Valid {
+					state.Distance = 1000.0 / (state.Nose.Distance(state.LeftShoulder) +
+						state.Nose.Distance(state.RightShoulder))
+				}
 			}
 			js.Global().Call("requestAnimationFrame", cb)
 		}()
@@ -79,6 +183,8 @@ func main() {
 			router.Navigate("/play")
 			poseNet.Start("smallVideo")
 			playing = true
+			state.Time = time.Now()
+			state.State = 0
 		}()
 	})
 	dispatcher.Register(actions.GameEnd, func(args ...interface{}) {
