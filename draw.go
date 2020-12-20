@@ -22,10 +22,25 @@ func drawDot(ctx js.Value, pos Vector, color string) {
 	ctx.Call("fill")
 }
 
-func drawText(ctx js.Value, text string, x, y, sz int, color string) {
+func drawTextCenter(ctx js.Value, text string, x, y, sz int, color string) {
 	ctx.Call("beginPath")
 	ctx.Set("fillStyle", color)
 	ctx.Set("font", fmt.Sprintf("bold %dpx Arial, sans-serif", sz))
 	textWidth := ctx.Call("measureText", text).Get("width").Int()
 	ctx.Call("fillText", text, x-(textWidth)/2, y)
+}
+
+func drawTextRight(ctx js.Value, text string, x, y, sz int, color string) {
+	ctx.Call("beginPath")
+	ctx.Set("fillStyle", color)
+	ctx.Set("font", fmt.Sprintf("bold %dpx Arial, sans-serif", sz))
+	textWidth := ctx.Call("measureText", text).Get("width").Int()
+	ctx.Call("fillText", text, x-(textWidth), y)
+}
+
+func drawText(ctx js.Value, text string, x, y, sz int, color string) {
+	ctx.Call("beginPath")
+	ctx.Set("fillStyle", color)
+	ctx.Set("font", fmt.Sprintf("bold %dpx Arial, sans-serif", sz))
+	ctx.Call("fillText", text, x, y)
 }

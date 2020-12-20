@@ -12,6 +12,7 @@ import (
 // Result  ...
 type Result struct {
 	spago.Core
+	Score int
 }
 
 // OnReturn ...

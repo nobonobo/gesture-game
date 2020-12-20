@@ -11,6 +11,9 @@ type Vector struct {
 	Y float64
 }
 
+// Add ...
+func (v Vector) Add(ov Vector) Vector { return Vector{v.X + ov.X, v.Y + ov.Y} }
+
 // Sub ...
 func (v Vector) Sub(ov Vector) Vector { return Vector{v.X - ov.X, v.Y - ov.Y} }
 
@@ -19,6 +22,9 @@ func (v Vector) Norm() float64 { return math.Sqrt(v.Dot(v)) }
 
 // Dot ...
 func (v Vector) Dot(ov Vector) float64 { return v.X*ov.X + v.Y*ov.Y }
+
+// Mul ...
+func (v Vector) Mul(m float64) Vector { return Vector{m * v.X, m * v.Y} }
 
 // Distance ...
 func (v Vector) Distance(ov Vector) float64 { return v.Sub(ov).Norm() }

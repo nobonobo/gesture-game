@@ -1,7 +1,8 @@
 <import>gesture-game/components</import>
 <body>
-  <raw>spago.C(&components.Header{Title: "Result"})</raw>
+  <raw>spago.C(&components.Header{Title: "けっか"})</raw>
   <main class="container">
-    <button @click="{{c.OnReturn}}" class="btn">Return to Top</button>
+    <h2>{{c.Score}}てん</h2>
+    <button @click="{{c.OnReturn}}" class="btn">タイトルにもどる</button>
   </main>
 </body>
