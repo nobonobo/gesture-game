@@ -102,12 +102,13 @@ func main() {
 					terminate = true
 				}
 				if remain < 0 {
+					state.State = 2
 					drawTextCenter(ctx, "しゅうりょう！", 320, 200, 32, "rgb(100,100,255)")
 					remain = 0
 				}
 				drawTextRight(ctx, fmt.Sprintf("のこり: %ds", remain), 640, 20, 20, white)
 				if state.State == 1 {
-					if rand.Int()%(remain+3) < 1 {
+					if rand.Int()%(remain+6) < 2 {
 						dispatcher.Dispatch(actions.Spawn)
 					}
 					ctx.Call("save")
@@ -197,7 +198,7 @@ func main() {
 	})
 	js.Global().Call("requestAnimationFrame", cb)
 	dispatcher.Register(actions.Spawn, func(args ...interface{}) {
-		x := rand.Int() % 640
+		x := (rand.Int() % 600) + 20
 		NewBaloon(x, 480)
 	})
 	js.Global().Set("spawn", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -224,6 +225,7 @@ func main() {
 			playing = true
 			state.Time = time.Now()
 			state.State = 0
+			state.Score = 0
 		}()
 	})
 	dispatcher.Register(actions.GameEnd, func(args ...interface{}) {

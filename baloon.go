@@ -68,7 +68,7 @@ func (b *Baloon) HitTest(d Vector) bool {
 func NewBaloon(x, y int) *Baloon {
 	b := &Baloon{
 		pos:      Vector{X: float64(x), Y: float64(y)},
-		velocity: Vector{X: 0.0, Y: -0.3},
+		velocity: Vector{X: 0.0, Y: -0.1},
 	}
 	log.Println("add:", b)
 	Baloons[b] = true
